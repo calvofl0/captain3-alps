@@ -1,0 +1,42 @@
+diff --git a/captain/agents/policy_network.py b/captain/agents/policy_network.py
+index 29b17d3..67abfe3 100644
+--- a/captain/agents/policy_network.py
++++ b/captain/agents/policy_network.py
+@@ -185,7 +185,11 @@ class PolicyNetwork:
+             Indices of selected cells.
+         """
+         # Add tiny noise to break ties
+-        noise = torch.randn_like(scores, generator=self.gen) * self.TIE_BREAK_NOISE
++        # PyTorch 2.4 compatibility: randn_like doesn't support generator parameter
++        # Use torch.randn with explicit shape instead
++        noise = torch.randn(
++            scores.shape, dtype=scores.dtype, device=scores.device, generator=self.gen
++        ) * self.TIE_BREAK_NOISE
+         _, top_indices = torch.topk(scores + noise, n_cells, sorted=False)
+         return top_indices
+
+diff --git a/captain/utils/data_loader.py b/captain/utils/data_loader.py
+index a652d47..e226d41 100644
+--- a/captain/utils/data_loader.py
++++ b/captain/utils/data_loader.py
+@@ -34,7 +34,9 @@ def load_map(
+     else:
+         raise ValueError(f"Unrecognized extension: {extension}, {filename}")
+
+-    data = np.clip(data, clip_min, clip_max)
++    if clip_min is not None or clip_max is not None:
++        data = np.clip(data, clip_min, clip_max)
++
+     if nan_to_num:
+         np.nan_to_num(data, copy=False)
+
+@@ -58,7 +60,9 @@ def load_maps_from_dir(
+         names.append(name)
+
+     data = np.squeeze(np.array(data))
+-    data = np.clip(data, clip_min, clip_max)
++
++    if clip_min is not None or clip_max is not None:
++        data = np.clip(data, clip_min, clip_max)
+
+     return data, np.array(names)
