@@ -34,3 +34,6 @@ tags
 # Output and Logs
 output/**
 logs/**
+
+# Virtualenv
+.venv
