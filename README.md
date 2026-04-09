@@ -35,6 +35,8 @@ For those who just want to run:
 
 ```bash
 # 1. Build the container (one-time setup)
+export XDG_RUNTIME_DIR=/run/user/$UID
+export XDG_DATA_HOME=$XDG_RUNTIME_DIR
 podman build -t ngc-pytorch-captain3preview:24.06 .
 mkdir -p ${SCRATCH}/captain3
 enroot import -x mount -o ${SCRATCH}/captain3/ngc-pytorch-captain3preview-24.06.sqsh podman://ngc-pytorch-captain3preview:24.06
@@ -64,6 +66,13 @@ sbatch examples/captain3inference_after_training.sbatch
 ### 1. Container Build
 
 The base NVIDIA PyTorch container needs to be customized for running CAPTAIN and converted to a format compatible with the CSCS Container Engine.
+
+#### Make sure Podman has read-write access to a runtime directory in a supported filesystem
+
+```bash
+export XDG_RUNTIME_DIR=/run/user/$UID
+export XDG_DATA_HOME=$XDG_RUNTIME_DIR
+```
 
 #### Build the Podman container:
 
