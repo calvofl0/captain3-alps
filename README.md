@@ -13,6 +13,7 @@
   - [3. Job Configuration](#3-job-configuration)
 - [Running the Job](#running-the-job)
 - [CAPTAIN development](#captain-development)
+- [CAPTAIN development legacy instructions](#captain-development-legacy-instructions)
 - [Understanding the Configuration](#understanding-the-configuration)
 - [Troubleshooting](#troubleshooting)
 
@@ -220,6 +221,70 @@ The build process was however long, and in a development context rebuilding the 
 The virtual environment hosting CAPTAIN and all Python dependencies will be located outside of the container, but it will be created and run with all the context of the container.
 
 CAPTAIN itself will be installed in the virtual environment in *editable mode*, which will allow to modify the CAPTAIN source code without the need of re-installing CAPTAIN each time in the virtual environment.
+
+### 1. Clone the CAPTAIN code
+
+```bash
+git clone https://github.com/captain-project/captain3preview ~/captain3preview
+```
+
+> [!WARNING]
+> The location of the source code in `~/captain3preview` can be changed, but then the corresponding bind path in `ngc-pytorch-26.04.toml` needs to be adjusted accordingly, so that the source code is also available from within then container.
+
+### 2. Container Build
+
+We need to build the base NVIDIA PyTorch container with a few extra packages for running CAPTAIN and convert it to a format compatible with the CSCS Container Engine.
+
+#### Make sure Podman has read-write access to a runtime directory in a supported filesystem
+
+```bash
+export XDG_RUNTIME_DIR=/run/user/$UID
+export XDG_DATA_HOME=$XDG_RUNTIME_DIR
+```
+
+#### Build the Podman container:
+
+```bash
+podman build -t ngc-pytorch:26.04 -f Containerfile.pytorch-26.04
+```
+
+This reads `Containerfile.pytorch-26.04` in the working directory and builds a container tagged as `ngc-pytorch:26.04`.
+
+#### Convert to SquashFS format:
+
+```bash
+enroot import -x mount -o ${SCRATCH}/captain3/ngc-pytorch-26.04.sqsh podman://ngc-pytorch:26.04
+```
+
+### 3. Prepare the Python virtual environment to run CAPTAIN
+
+#### Start a session within the container
+
+```bash
+srun -A <YOUR_PROJECT> --environment ./ngc-pytorch-26.04.toml --pty bash
+```
+
+#### Create the Python virtual environment and register system packages
+
+```bash
+uv venv --python "$(which python3)" --system-site-packages --seed --relocatable --link-mode=copy venv-26.04
+venv-26.04/bin/python register_system_packages.py
+```
+
+#### Install CAPTAIN in editable mode
+```bash
+uv pip install --python venv-26.04/bin/python -e ~/captain3preview
+```
+
+#### Quit the session and revoke the job allocation
+```bash
+exit
+```
+
+> [!IMPORTANT]
+> Whenever additional packages need to be installed in the Python virtual environment, it needs to be done from within the container. This is achieved by starting a session as demonstrated above, with the `srun` command.
+
+## CAPTAIN development legacy instructions
 
 ### 1. Clone and patch the CAPTAIN code
 

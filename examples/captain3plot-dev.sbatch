@@ -21,10 +21,10 @@
 
 export SLURM_EXPORT_ENV=ALL
 
-VENV_PATH=~/captain3-alps/.venv
+VENV_PATH=~/captain3-alps/venv-26.04
 RUN_SCRIPT=~/captain3preview/examples/plot_input_data.py
 
-EDF_FILE=./ngc-pytorch-24.06.toml
+EDF_FILE=./ngc-pytorch-26.04.toml
 
 srun --environment ${EDF_FILE} /bin/bash -c '\
     '"${VENV_PATH}"'/bin/python '"${RUN_SCRIPT}"''
